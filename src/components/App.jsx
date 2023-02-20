@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 
 import ContactForm from './ContactForm/ContactForm';
@@ -10,7 +10,10 @@ import ContactList from './ContactList/ContactList';
 import styles from './ContactForm/contactForm.module.css';
 
 const App = () => {
-  const [contacts, setContacts] = useState([]);
+  const [contacts, setContacts] = useState(() => {
+    const contacts = JSON.parse(localStorage.getItem("My-Contacts"));
+    return contacts?.length ? contacts : [];
+  });
   const [filter, setFilter] = useState('');
 
   const isDublicateContact = (name, number) => {
@@ -22,6 +25,10 @@ const App = () => {
     return Boolean(contact);
   };
 
+  useEffect(() => {
+    localStorage.setItem('My-Contacts', JSON.stringify(contacts));
+  }, [contacts]);
+
   const addContact = ({ name, number }) => {
     if (isDublicateContact(name, number)) {
       return alert(
@@ -30,7 +37,6 @@ const App = () => {
     }
 
     setContacts(prevContacts => {
-
       const newContact = {
         id: nanoid(),
         name,
@@ -61,7 +67,7 @@ const App = () => {
     return result;
   };
 
-  const onFilterInputChange = ({target}) => setFilter(target.value);
+  const onFilterInputChange = ({ target }) => setFilter(target.value);
 
   const filteredContacts = getFilteredContacts();
 
@@ -72,7 +78,10 @@ const App = () => {
       <div className={styles.contacts}>
         <h2 className={styles.title}>Contacts:</h2>
         <ContactFilter onInputChange={onFilterInputChange} />
-        <ContactList contacts={filteredContacts} deleteContact={deleteContact} />
+        <ContactList
+          contacts={filteredContacts}
+          deleteContact={deleteContact}
+        />
       </div>
     </div>
   );
