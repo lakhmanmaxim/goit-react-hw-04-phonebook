@@ -1,80 +1,53 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { nanoid } from 'nanoid';
 
 import ContactForm from './ContactForm/ContactForm';
 import ContactFilter from './ContactsFilter/ContactsFilter';
 import ContactList from './ContactList/ContactList';
 
-import contactsArray from './contactsArray';
+// import contactsArray from './contactsArray';
 
 import styles from './ContactForm/contactForm.module.css';
 
-export class App extends Component {
-  state = {
-    contacts: [...contactsArray],
-    filter: '',
-  };
+const App = () => {
+  const [contacts, setContacts] = useState([]);
+  const [filter, setFilter] = useState('');
 
-  componentDidMount() {
-    const contacts = JSON.parse(localStorage.getItem('contacts'));
-    if (contacts?.length) {
-      this.setState({ contacts });
-    }
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    const { contacts } = this.state;
-    if (prevState.contacts.length !== contacts.length) {
-      localStorage.setItem('contacts', JSON.stringify(contacts));
-    }
-  }
-
-  onInputChange = ({ target }) => {
-    const { name, value } = target;
-    this.setState({
-      [name]: value,
-    });
-  };
-
-  addContact = ({ name, number }) => {
-    const { contacts } = this.state;
-
-    if (this.isDublicateContact(name, number)) {
-      return alert(
-        `The contact "${name}" or number "${number}" alredy exist your contact list. Please, check name or number of contact and try again`
-      );
-    }
-
-    this.setState(prevState => {
-      const newContact = {
-        id: nanoid(),
-        name,
-        number,
-      };
-
-      return { contacts: [newContact, ...contacts] };
-    });
-  };
-
-  isDublicateContact = (name, number) => {
+  const isDublicateContact = (name, number) => {
     const normalizedName = name.toLowerCase();
     const phoneNumber = number;
-    const { contacts } = this.state;
     const contact = contacts.find(({ name, number }) => {
       return name.toLowerCase() === normalizedName || number === phoneNumber;
     });
     return Boolean(contact);
   };
 
-  deleteContact = id => {
-    this.setState(({ contacts }) => {
-      const newContact = contacts.filter(contact => contact.id !== id);
-      return { contacts: newContact };
+  const addContact = ({ name, number }) => {
+    if (isDublicateContact(name, number)) {
+      return alert(
+        `The contact "${name}" or number "${number}" alredy exist your contact list. Please, check name or number of contact and try again`
+      );
+    }
+
+    setContacts(prevContacts => {
+
+      const newContact = {
+        id: nanoid(),
+        name,
+        number,
+      };
+
+      return [...[newContact], ...prevContacts];
     });
   };
 
-  getFilteredContacts = () => {
-    const { filter, contacts } = this.state;
+  const deleteContact = id => {
+    setContacts(prevContacts =>
+      prevContacts.filter(contact => contact.id !== id)
+    );
+  };
+
+  const getFilteredContacts = () => {
     if (!filter) {
       return contacts;
     }
@@ -88,20 +61,36 @@ export class App extends Component {
     return result;
   };
 
-  render() {
-    const { onInputChange, deleteContact, addContact } = this;
-    const contacts = this.getFilteredContacts();
+  const onFilterInputChange = ({target}) => setFilter(target.value);
 
-    return (
-      <div className={styles.wrapper}>
-        <ContactForm onSubmit={addContact} />
+  const filteredContacts = getFilteredContacts();
 
-        <div className={styles.contacts}>
-          <h2 className={styles.title}>Contacts:</h2>
-          <ContactFilter onInputChange={onInputChange} />
-          <ContactList contacts={contacts} deleteContact={deleteContact} />
-        </div>
+  return (
+    <div className={styles.wrapper}>
+      <ContactForm onSubmit={addContact} />
+
+      <div className={styles.contacts}>
+        <h2 className={styles.title}>Contacts:</h2>
+        <ContactFilter onInputChange={onFilterInputChange} />
+        <ContactList contacts={filteredContacts} deleteContact={deleteContact} />
       </div>
-    );
+    </div>
+  );
+};
+
+export default App;
+/*
+  componentDidMount() {
+    const contacts = JSON.parse(localStorage.getItem('contacts'));
+    if (contacts?.length) {
+      this.setState({ contacts });
+    }
   }
-}
+
+  componentDidUpdate(prevProps, prevState) {
+    const { contacts } = this.state;
+    if (prevState.contacts.length !== contacts.length) {
+      localStorage.setItem('contacts', JSON.stringify(contacts));
+    }
+  }
+  */
